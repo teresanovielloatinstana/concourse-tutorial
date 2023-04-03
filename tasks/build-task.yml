@@ -1,0 +1,20 @@
+platform: linux
+image_resource:
+type: registry-image
+source:
+# Check out the README for oci-build-task at
+# https://github.com/concourse/oci-build-task
+repository: concourse/oci-build-task
+tag: latest
+
+inputs:
+- name: concourse-examples
+
+outputs:
+- name: image
+params:
+  CONTEXT: concourse-examples/Dockerfiles/simple
+  UNPACK_ROOTFS: "true" # only needed if using image in a future step
+run:
+  path: build
+

@@ -1,0 +1,45 @@
+---
+resources:
+# The repo with our Dockerfile
+- name: concourse-examples
+  type: git
+  icon: github
+  source:
+    uri: https://github.com/concourse/examples.git
+    branch: master
+
+- name: concourse-image
+  type: registry-image
+  icon: docker
+  source:
+    repository: containers.instana.io/instana/concourse-tutorial
+    tag: latest
+    username: ((containers-instana-io-creds.username))
+    password: ((containers-instana-io-creds.password))
+
+jobs:
+- name: build-and-push-image
+  plan:
+  - get: concourse-examples
+  - task: build-task-image
+    privileged: true
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source:
+          # Check out the README for oci-build-task at
+          # https://github.com/concourse/oci-build-task
+          repository: concourse/oci-build-task
+      inputs:
+      - name: concourse-examples
+      outputs:
+      - name: image
+      params:
+        CONTEXT: concourse-examples/Dockerfiles/simple
+        UNPACK_ROOTFS: "true" # only needed if using image in a future step
+      run:
+        path: build
+  - put: concourse-image
+    params:
+      image: image/image.tar

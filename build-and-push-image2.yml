@@ -1,0 +1,46 @@
+---
+resources:
+# The repo with our Dockerfile
+- name: concourse-examples
+  type: git
+  icon: github
+  source:
+    uri: https://github.com/concourse/examples.git
+    branch: master
+
+- name: concourse-tutorial-tnoviello
+  type: git
+  icon: github
+  source:
+    uri: https://github.ibm.com/Teresa-Noviello/concourse-tutorial.git
+    username: teresanovielloatinstana
+    private_key: (private-key-json)
+    branch: (branch)
+
+- name: concourse-image
+  type: registry-image
+  icon: docker
+  source:
+    repository: containers.instana.io/instana/concourse-tutorial
+    tag: latest
+    username: ((containers-instana-io-creds.username))
+    password: ((containers-instana-io-creds.password))
+
+jobs:
+- name: build-and-push-image
+  plan:
+  - get: concourse-examples
+  - get: concourse-tutorial-tnoviello
+  - task: build-task-image
+    params:
+      CONTEXT: concourse-examples/Dockerfiles/simple
+      UNPACK_ROOTFS: "true" # only needed if using image in a future step
+    privileged: true
+    file: concourse-tutorial-tnoviello/tasks/build-task.yml
+    input_mapping:
+      concourse-examples: concourse-examples
+    output_mapping:
+      image: image
+  - put: concourse-image
+    params:
+      image: image/image.tar
